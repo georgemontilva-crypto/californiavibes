@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { BRAND_SLOGAN } from "@shared/const";
 import { groupByLine } from "@shared/lines";
 import { ArrowRight } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 
 /** Strains in the order they first appear, each with its products across lines. */
@@ -228,6 +228,9 @@ function StrainPicker({
 }) {
   const strains = useMemo(() => groupByStrain(products), [products]);
   const [index, setIndex] = useState(0);
+  // Which format the visitor is looking at in the phone carousel. Kept here,
+  // not in the carousel, so switching strain stays on the same format.
+  const [format, setFormat] = useState(0);
   const current = strains[Math.min(index, Math.max(0, strains.length - 1))];
 
   return (
@@ -287,7 +290,7 @@ function StrainPicker({
 
             {current && (
               <div key={current.name} className="rise mt-10" role="tabpanel" aria-label={current.name}>
-                <StrainCarousel items={current.items} />
+                <StrainCarousel items={current.items} active={format} onActive={setFormat} />
                 <div className="mt-8 text-center">
                   <Link href="/products" className="btn btn-ghost">
                     See every product
@@ -307,9 +310,29 @@ function StrainPicker({
    On phones the three formats of a strain slide sideways, one card at a time
    with the next one peeking in; from tablet up they sit side by side. */
 
-function StrainCarousel({ items }: { items: CatalogProduct[] }) {
+function StrainCarousel({
+  items,
+  active: wanted,
+  onActive,
+}: {
+  items: CatalogProduct[];
+  active: number;
+  onActive: (i: number) => void;
+}) {
   const ref = useRef<HTMLUListElement | null>(null);
-  const [active, setActive] = useState(0);
+  const active = Math.min(wanted, items.length - 1);
+  const setActive = onActive;
+
+  // A new strain mounts a new carousel: open it on the format that was being
+  // viewed (pre-roll stays pre-roll), without an animated slide from the start.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const card = el?.children[active] as HTMLElement | undefined;
+    if (el && card && el.scrollWidth > el.clientWidth) {
+      el.scrollLeft = card.offsetLeft - el.offsetLeft - 16;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onScroll = () => {
     const el = ref.current;
