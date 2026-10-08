@@ -1,7 +1,7 @@
 import { CLAIMS, ClaimBadge, LabReportsButton } from "@/components/Brand";
 import { FaqSection } from "@/components/HomeSections";
 import { Lockup, Palm } from "@/components/Logo";
-import { Price, ProductCard } from "@/components/ProductCard";
+import { ProductCard } from "@/components/ProductCard";
 import { ProductShot } from "@/components/ProductShot";
 import { PublicLayout } from "@/components/PublicLayout";
 import { ReelVideo } from "@/components/ReelVideo";
@@ -14,9 +14,9 @@ import {
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { BRAND_SLOGAN } from "@shared/const";
-import { groupByLine, lineSlug } from "@shared/lines";
+import { groupByLine } from "@shared/lines";
 import { ArrowRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 
 /** Strains in the order they first appear, each with its products across lines. */
@@ -47,7 +47,6 @@ export default function Home() {
       <Hero products={all} video={heroVideo} />
       <ClaimsTicker />
       <StrainPicker products={all} loading={products.isLoading} />
-      <Formats products={all} />
       {reels.length > 0 && <Reels videos={reels} />}
       <BrandPromise />
       <LabBand />
@@ -288,11 +287,7 @@ function StrainPicker({
 
             {current && (
               <div key={current.name} className="rise mt-10" role="tabpanel" aria-label={current.name}>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {current.items.map(p => (
-                    <ProductCard key={p.id} product={p} />
-                  ))}
-                </div>
+                <StrainCarousel items={current.items} />
                 <div className="mt-8 text-center">
                   <Link href="/products" className="btn btn-ghost">
                     See every product
@@ -308,70 +303,61 @@ function StrainPicker({
   );
 }
 
-/* ─── Formats ───────────────────────────────────────────────────────────── */
+/* ─── Strain carousel ─────────────────────────────────────────────────────
+   On phones the three formats of a strain slide sideways, one card at a time
+   with the next one peeking in; from tablet up they sit side by side. */
 
-function Formats({ products }: { products: CatalogProduct[] }) {
-  const groups = groupByLine(products);
-  if (groups.length === 0) return null;
-  const picks = ["gelato", "toad venom", "skunk og"];
+function StrainCarousel({ items }: { items: CatalogProduct[] }) {
+  const ref = useRef<HTMLUListElement | null>(null);
+  const [active, setActive] = useState(0);
+
+  const onScroll = () => {
+    const el = ref.current;
+    if (!el) return;
+    const card = el.firstElementChild as HTMLElement | null;
+    if (!card) return;
+    const step = card.offsetWidth + 12;
+    setActive(Math.min(items.length - 1, Math.round(el.scrollLeft / step)));
+  };
+
+  const goTo = (i: number) => {
+    const el = ref.current;
+    const card = el?.children[i] as HTMLElement | undefined;
+    if (el && card) el.scrollTo({ left: card.offsetLeft - el.offsetLeft - 16, behavior: "smooth" });
+  };
 
   return (
-    <section className="bg-dusk py-16 md:py-24">
-      <div className="container">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="eyebrow">Shop by format</p>
-            <h2 className="mt-3 text-5xl text-cream md:text-7xl">Choose your style</h2>
-          </div>
-          <Link href="/products" className="btn btn-ghost">
-            All products
-          </Link>
+    <div>
+      <ul
+        ref={ref}
+        onScroll={onScroll}
+        className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-3"
+        aria-label="Formats"
+      >
+        {items.map(p => (
+          <li key={p.id} className="w-[80%] shrink-0 snap-start sm:w-auto">
+            <ProductCard product={p} />
+          </li>
+        ))}
+      </ul>
+      {items.length > 1 && (
+        <div className="mt-4 flex justify-center gap-2 sm:hidden" role="group" aria-label="Choose a format">
+          {items.map((p, i) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={p.collection ?? p.name}
+              aria-current={i === active || undefined}
+              className={cn(
+                "h-2.5 rounded-full transition-all duration-300",
+                i === active ? "w-8 bg-accent" : "w-2.5 bg-white/25"
+              )}
+            />
+          ))}
         </div>
-
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {groups.map((g, i) => {
-            const face =
-              g.items.find(p => p.name.toLowerCase() === picks[i]) ?? g.items[0];
-            const from = Math.min(
-              ...g.items.map(p => (p.priceCents > 0 ? p.priceCents : Infinity))
-            );
-            return (
-              <Link
-                key={g.name}
-                href={`/products?line=${lineSlug(g.name)}`}
-                style={accentStyle(face?.accentColor)}
-                className="card group flex flex-col p-6 transition-transform duration-300 hover:-translate-y-1"
-              >
-                <ProductShot
-                  src={face?.imageUrl ?? null}
-                  alt=""
-                  className="mx-auto w-full max-w-[300px] transition-transform duration-500 group-hover:scale-105"
-                />
-                <h3 className="mt-3 text-4xl text-cream">{g.name}</h3>
-                {g.info && (
-                  <p className="mt-1 text-xs font-extrabold uppercase tracking-[0.16em] text-accent">
-                    {g.info.format}
-                  </p>
-                )}
-                {g.info && <p className="mt-3 text-haze">{g.info.blurb}</p>}
-                <div className="mt-5 flex items-center justify-between">
-                  {Number.isFinite(from) ? (
-                    <span className="font-bold text-cream">
-                      From <Price cents={from} />
-                    </span>
-                  ) : (
-                    <span />
-                  )}
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-night transition-transform group-hover:translate-x-1">
-                    <ArrowRight className="h-5 w-5" />
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    </section>
+      )}
+    </div>
   );
 }
 
