@@ -79,6 +79,23 @@ function AccountRow({ account: a }: { account: Account }) {
   const [open, setOpen] = useState(a.status === "pending");
   const utils = trpc.useUtils();
   const [note, setNote] = useState(a.adminNote ?? "");
+  const [newPassword, setNewPassword] = useState("");
+  const setPassword = trpc.wholesale.adminSetPassword.useMutation({
+    onSuccess: () => {
+      setNewPassword("");
+      toast.success("Password changed. Send it to the buyer.");
+    },
+    onError: e => {
+      let m = e.message;
+      try {
+        const issues = JSON.parse(e.message) as { message?: string }[];
+        if (issues[0]?.message) m = issues[0].message;
+      } catch {
+        /* already a sentence */
+      }
+      toast.error(m || "Could not change the password");
+    },
+  });
   const refresh = () => {
     utils.wholesale.adminList.invalidate();
     utils.adminAuth.dashboardOverview.invalidate();
@@ -171,6 +188,26 @@ function AccountRow({ account: a }: { account: Account }) {
             )}
             <Field label="Internal note" hint="Only visible here.">
               <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} className={inputClass} />
+            </Field>
+            <Field
+              label="Set a new password"
+              hint="Buyers can reset it themselves by email. Use this only if they can't get the email."
+            >
+              <div className="flex gap-2">
+                <input
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="8+ characters"
+                  className={inputClass}
+                />
+                <button
+                  className={ghostButtonClass}
+                  disabled={setPassword.isPending || newPassword.length < 8}
+                  onClick={() => setPassword.mutate({ id: a.id, password: newPassword })}
+                >
+                  Set
+                </button>
+              </div>
             </Field>
             <div className="flex flex-wrap items-center gap-2">
               <button

@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Link, useSearch } from "wouter";
 
 /** Zod errors arrive as a JSON list; the first message is what the visitor can act on. */
-function readable(message: string | undefined, fallback: string): string {
+export function readable(message: string | undefined, fallback: string): string {
   if (!message) return fallback;
   try {
     const issues = JSON.parse(message) as { message?: string }[];
@@ -141,6 +141,7 @@ function LoginForm({ onApply }: { onApply: () => void }) {
   const utils = trpc.useUtils();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [forgot, setForgot] = useState(false);
   const login = trpc.wholesale.login.useMutation({
     onSuccess: () => utils.invalidate(),
   });
@@ -176,13 +177,75 @@ function LoginForm({ onApply }: { onApply: () => void }) {
         </div>
         <p className="text-sm text-haze">
           Forgot your password?{" "}
-          <Link href="/contact" className="underline underline-offset-4 hover:text-cream">
-            Contact us
-          </Link>{" "}
-          and we'll reset it.
+          <button
+            type="button"
+            onClick={() => setForgot(true)}
+            className="font-semibold text-gold underline-offset-4 hover:underline"
+          >
+            Reset it
+          </button>
         </p>
       </form>
+      {forgot && <ForgotForm initialEmail={email} onClose={() => setForgot(false)} />}
     </Panel>
+  );
+}
+
+/* ─── Forgot password ───────────────────────────────────────────────────── */
+
+function ForgotForm({ initialEmail, onClose }: { initialEmail: string; onClose: () => void }) {
+  const [email, setEmail] = useState(initialEmail);
+  const request = trpc.wholesale.requestReset.useMutation();
+
+  return (
+    <div className="mt-8 rounded-3xl bg-panel p-5 ring-1 ring-rule">
+      {request.isSuccess ? (
+        <>
+          <p className="font-bold text-cream">Check your email</p>
+          <p className="mt-1 text-sm text-haze">
+            If {email} has a wholesale account, we just sent it a link to choose
+            a new password. The link expires in 1 hour. Nothing there? Check
+            spam, or{" "}
+            <Link href="/contact" className="underline underline-offset-4 hover:text-cream">
+              contact us
+            </Link>
+            .
+          </p>
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-sm mt-4">
+            Back to login
+          </button>
+        </>
+      ) : (
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            request.mutate({ email });
+          }}
+          className="grid gap-3"
+        >
+          <p className="font-bold text-cream">Reset your password</p>
+          <p className="text-sm text-haze">
+            Enter the email of your wholesale account and we'll send you a link
+            to choose a new password.
+          </p>
+          <Field label="Email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />
+          {request.error && (
+            <p role="alert" className="text-sm font-semibold text-coral">
+              {readable(request.error.message, "Couldn't send the link. Try again.")}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button type="submit" disabled={request.isPending} className="btn btn-gold btn-sm">
+              {request.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Send reset link
+            </button>
+            <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 

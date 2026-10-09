@@ -227,3 +227,29 @@ export async function sendWholesaleApproved(a: {
     ].join("\n"),
   });
 }
+
+export function canSendCustomerEmail(): boolean {
+  return canSend();
+}
+
+export async function sendWholesaleReset(a: {
+  email: string;
+  contactName: string;
+  link: string;
+}): Promise<void> {
+  if (!canSend()) return;
+  await send({
+    to: a.email,
+    replyTo: CONTACT_TO_EMAIL || undefined,
+    subject: `Reset your ${BRAND_NAME} wholesale password`,
+    text: [
+      `Hi ${a.contactName.split(" ")[0]},`,
+      "",
+      "Someone (hopefully you) asked to reset the password of your wholesale account. Open this link to choose a new one:",
+      "",
+      a.link,
+      "",
+      "The link works once and expires in 1 hour. If you didn't ask for this, ignore this email: your password stays the same.",
+    ].join("\n"),
+  });
+}

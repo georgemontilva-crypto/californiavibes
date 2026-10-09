@@ -13,6 +13,7 @@ COA (el link se cambia en `/admin/store`).
 | `/checkout` | Datos de envío, pago (tarjeta con Authorize.net o "pago por email") y resumen |
 | `/order/:number` | Confirmación del pedido |
 | `/wholesale` | Login de mayoristas y formulario para solicitar cuenta |
+| `/wholesale/reset` | Elegir contraseña nueva desde el link del email |
 | `/lab-reports` | Reportes subidos desde el panel, por producto, más el botón a Dropbox |
 | `/about` | About Us |
 | `/contact` | Contact Us: formulario + datos de la empresa |
@@ -132,6 +133,9 @@ botón **Repair file links** de `/admin/lab-reports` las reescribe.
   mayorista** de cada producto (campo *Wholesale price* en Products; vacío =
   paga el precio al detal) y sus pedidos salen marcados *Wholesale* en Orders.
   El pedido mínimo mayorista se pone en Store settings (0 = sin mínimo).
+  **Contraseña olvidada:** en el login, *Reset it* manda un link por email
+  (válido 1 hora, sirve una sola vez; necesita Resend). Si el comprador no
+  recibe el email, en el panel de Wholesale hay *Set a new password*.
 - **Lab Reports**: elegir el producto y subir el PDF. Sale en la página del
   producto y en `/lab-reports`.
 - **Videos**: clips verticales (9:16) en MP4. El marcado con estrella sale en el

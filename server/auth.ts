@@ -1,5 +1,6 @@
 import { ADMIN_COOKIE_NAME, THIRTY_DAYS_MS, WHOLESALE_COOKIE_NAME } from "@shared/const";
 import bcrypt from "bcryptjs";
+import { createHash } from "node:crypto";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
@@ -86,4 +87,39 @@ export function appCookieOptions(req: Request) {
     secure,
     maxAge: THIRTY_DAYS_MS,
   };
+}
+
+/* ─── Password reset links ────────────────────────────────────────────────
+   Stateless: the token is a signed JWT that carries a fingerprint of the
+   current password hash. Once the password changes the fingerprint no longer
+   matches, so a link works exactly once and needs no table to track it. */
+
+const RESET_TTL_SECONDS = 60 * 60;
+
+function hashFingerprint(passwordHash: string): string {
+  return createHash("sha256").update(passwordHash).digest("hex").slice(0, 24);
+}
+
+export async function signResetToken(accountId: number, passwordHash: string): Promise<string> {
+  return new SignJWT({ sub: String(accountId), kind: "wholesale-reset", fp: hashFingerprint(passwordHash) })
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setExpirationTime(Math.floor(Date.now() / 1000) + RESET_TTL_SECONDS)
+    .sign(getSecret());
+}
+
+/** The account id the link was issued for, or null if it's invalid, expired or already used. */
+export async function verifyResetToken(
+  token: string,
+  currentHashFor: (id: number) => Promise<string | null>
+): Promise<number | null> {
+  try {
+    const { payload } = await jwtVerify(token, getSecret(), { algorithms: ["HS256"] });
+    const id = Number(payload.sub);
+    if (payload.kind !== "wholesale-reset" || !Number.isFinite(id)) return null;
+    const hash = await currentHashFor(id);
+    if (!hash || payload.fp !== hashFingerprint(hash)) return null;
+    return id;
+  } catch {
+    return null;
+  }
 }

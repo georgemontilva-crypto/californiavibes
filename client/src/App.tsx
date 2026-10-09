@@ -12,6 +12,7 @@ import NotFound from "@/pages/NotFound";
 import OrderSuccess from "@/pages/OrderSuccess";
 import ProductDetail from "@/pages/ProductDetail";
 import Wholesale from "@/pages/Wholesale";
+import WholesaleReset from "@/pages/WholesaleReset";
 import Products from "@/pages/Products";
 
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/about" component={About} />
         <Route path="/contact" component={Contact} />
         <Route path="/checkout" component={Checkout} />
+        <Route path="/wholesale/reset" component={WholesaleReset} />
         <Route path="/wholesale" component={Wholesale} />
         <Route path="/order/:number" component={OrderSuccess} />
 

@@ -3,10 +3,17 @@ import { isUsState } from "@shared/store";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { WHOLESALE_STATUSES, type WholesaleAccount } from "../../drizzle/schema";
-import { appCookieOptions, hashPassword, signAppSession, verifyPassword } from "../auth";
+import {
+  appCookieOptions,
+  hashPassword,
+  signAppSession,
+  signResetToken,
+  verifyPassword,
+  verifyResetToken,
+} from "../auth";
 import { adminAuthedProcedure, appRouterFactory, publicProc } from "../appTrpc";
 import * as db from "../db";
-import { notifyWholesaleApplication, sendWholesaleApproved } from "../mailer";
+import { notifyWholesaleApplication, sendWholesaleApproved, sendWholesaleReset } from "../mailer";
 import { currentWholesale } from "../wholesaleSession";
 
 /** What the buyer's own browser may see about their account. */
@@ -129,6 +136,56 @@ export const wholesaleRouter = appRouterFactory({
       return { success: true, account: publicAccount(a) };
     }),
 
+  /**
+   * Emails a one-time reset link. Answers the same whether or not the email
+   * has an account, so the form can't be used to find out who is a customer.
+   */
+  requestReset: publicProc
+    .input(z.object({ email: z.string().trim().email("That email doesn't look right") }))
+    .mutation(async ({ input, ctx }) => {
+      const ip = ctx.req.ip ?? "unknown";
+      const email = input.email.toLowerCase();
+      if (!allow(`reset:${ip}`, 10) || !allow(`reset:${email}`, 3)) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many requests. Try again in an hour." });
+      }
+      const a = await db.getWholesaleByEmail(email);
+      if (a && a.status !== "rejected") {
+        const token = await signResetToken(a.id, a.passwordHash);
+        const link = `${ctx.req.protocol}://${ctx.req.get("host")}/wholesale/reset?token=${encodeURIComponent(token)}`;
+        void sendWholesaleReset({ email: a.email, contactName: a.contactName, link });
+      }
+      return { success: true };
+    }),
+
+  resetPassword: publicProc
+    .input(
+      z.object({
+        token: z.string().min(20).max(2000),
+        password: z.string().min(8, "Use at least 8 characters").max(200),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const id = await verifyResetToken(input.token, async accountId => {
+        const a = await db.getWholesaleById(accountId);
+        return a?.passwordHash ?? null;
+      });
+      if (!id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This reset link is invalid, expired or was already used. Ask for a new one.",
+        });
+      }
+      const updated = await db.updateWholesale(id, { passwordHash: await hashPassword(input.password) });
+      // Approved buyers go straight in; anyone else just gets the new password.
+      if (updated?.status === "approved") {
+        await db.updateWholesale(id, { lastSignedIn: new Date() });
+        const session = await signAppSession({ sub: updated.id, kind: "wholesale", email: updated.email });
+        ctx.res.cookie(WHOLESALE_COOKIE_NAME, session, appCookieOptions(ctx.req));
+        return { success: true, loggedIn: true };
+      }
+      return { success: true, loggedIn: false };
+    }),
+
   logout: publicProc.mutation(({ ctx }) => {
     const { maxAge: _maxAge, ...opts } = appCookieOptions(ctx.req);
     ctx.res.clearCookie(WHOLESALE_COOKIE_NAME, opts);
@@ -161,6 +218,17 @@ export const wholesaleRouter = appRouterFactory({
         const siteUrl = `${ctx.req.protocol}://${ctx.req.get("host")}`;
         void sendWholesaleApproved({ email: updated.email, contactName: updated.contactName, siteUrl });
       }
+      return { success: true };
+    }),
+
+  /** For when a buyer can't get the email: the admin sets a password and tells them. */
+  adminSetPassword: adminAuthedProcedure
+    .input(z.object({ id: z.number().int(), password: z.string().min(8, "Use at least 8 characters").max(200) }))
+    .mutation(async ({ input }) => {
+      if (!(await db.getWholesaleById(input.id))) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Account not found" });
+      }
+      await db.updateWholesale(input.id, { passwordHash: await hashPassword(input.password) });
       return { success: true };
     }),
 
