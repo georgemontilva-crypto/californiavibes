@@ -68,11 +68,20 @@ export function serveStatic(app: Express) {
       maxAge: "1y",
     })
   );
-  app.use(express.static(distPath, { maxAge: "1h" }));
+  // index: false so "/" also goes through the handler below.
+  app.use(express.static(distPath, { maxAge: "1h", index: false }));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
+  // WhatsApp, Facebook and iMessage ignore a relative og:image, so the share
+  // image is made absolute with whatever domain the page was asked on
+  // (railway.app today, the real domain later) without hard-coding either.
+  const indexHtml = fs.existsSync(path.resolve(distPath, "index.html"))
+    ? fs.readFileSync(path.resolve(distPath, "index.html"), "utf8")
+    : "";
+  app.use("*", (req, res) => {
+    const origin = `${req.protocol}://${req.get("host")}`;
     res.set("Cache-Control", "no-cache");
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res
+      .type("html")
+      .send(indexHtml.replace(/content="\/brand\/og\.jpg"/g, `content="${origin}/brand/og.jpg"`));
   });
 }
