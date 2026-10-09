@@ -1,4 +1,4 @@
-import { ADMIN_COOKIE_NAME, THIRTY_DAYS_MS } from "@shared/const";
+import { ADMIN_COOKIE_NAME, THIRTY_DAYS_MS, WHOLESALE_COOKIE_NAME } from "@shared/const";
 import bcrypt from "bcryptjs";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
@@ -24,7 +24,7 @@ function getSecret() {
   return new TextEncoder().encode(ENV.cookieSecret || "californiavibes-dev-secret-change-me");
 }
 
-export type AppSessionKind = "admin";
+export type AppSessionKind = "admin" | "wholesale";
 
 export type AppSessionPayload = {
   sub: number;
@@ -67,6 +67,10 @@ function readCookie(req: Request, name: string): string | undefined {
 
 export function getAdminSessionToken(req: Request): string | undefined {
   return readCookie(req, ADMIN_COOKIE_NAME);
+}
+
+export function getWholesaleSessionToken(req: Request): string | undefined {
+  return readCookie(req, WHOLESALE_COOKIE_NAME);
 }
 
 export function appCookieOptions(req: Request) {

@@ -95,6 +95,21 @@ export default function Checkout() {
     note: "",
   });
   const [card, setCard] = useState({ number: "", exp: "", cvv: "" });
+  const wholesale = trpc.wholesale.me.useQuery().data;
+
+  // A wholesale buyer's contact details are already on file: fill them in once.
+  useEffect(() => {
+    if (!wholesale) return;
+    const [first, ...rest] = wholesale.contactName.split(" ");
+    setForm(f => ({
+      ...f,
+      email: f.email || wholesale.email,
+      phone: f.phone || wholesale.phone || "",
+      firstName: f.firstName || first || "",
+      lastName: f.lastName || rest.join(" "),
+      state: f.state || wholesale.state || "",
+    }));
+  }, [wholesale]);
   const [age, setAge] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -116,6 +131,8 @@ export default function Checkout() {
   const shipping = shippingFor(subtotalCents, config);
   const total = subtotalCents + shipping;
   const unavailable = lines.filter(l => !l.product.inStock || l.product.priceCents <= 0);
+  const belowMin =
+    !!wholesale && config.wholesaleMinCents > 0 && subtotalCents < config.wholesaleMinCents;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +140,9 @@ export default function Checkout() {
     if (!age) return setError("Please confirm you are 21 or older.");
     if (blocked) return setError(`Sorry, we can't ship to ${form.state}.`);
     if (unavailable.length) return setError("Remove the out-of-stock items to continue.");
+    if (belowMin) {
+      return setError(`Wholesale orders need a subtotal of at least ${formatMoney(config.wholesaleMinCents)}.`);
+    }
 
     setBusy(true);
     try {
@@ -190,7 +210,15 @@ export default function Checkout() {
   return (
     <PublicLayout>
       <div className="container py-10 md:py-14">
-        <h1 className="text-5xl text-cream md:text-6xl">Checkout</h1>
+        <h1 className="text-5xl text-cream md:text-6xl">
+          {wholesale ? "Wholesale checkout" : "Checkout"}
+        </h1>
+        {wholesale && (
+          <p className="mt-2 font-semibold text-gold">
+            Ordering as {wholesale.businessName} · wholesale pricing
+            {config.wholesaleMinCents > 0 && ` · minimum ${formatMoney(config.wholesaleMinCents)}`}
+          </p>
+        )}
         <div className="holo-rule mt-5 max-w-[160px] rounded-full" aria-hidden />
 
         <form

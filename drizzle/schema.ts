@@ -73,6 +73,11 @@ export const products = mysqlTable(
     priceCents: int("priceCents").default(0).notNull(),
     /** Optional struck-through "was" price, in cents. */
     compareAtCents: int("compareAtCents"),
+    /**
+     * Price for approved wholesale accounts, in cents. Empty means wholesale
+     * buyers pay the retail price until one is set.
+     */
+    wholesalePriceCents: int("wholesalePriceCents"),
     /** Out of stock products stay on the site but can't be bought. */
     inStock: boolean("inStock").default(true).notNull(),
     /** Lower sorts first; ties break on name. */
@@ -220,6 +225,9 @@ export const orders = mysqlTable(
     /** Public order number, e.g. "CV-48213". */
     number: varchar("number", { length: 32 }).notNull().unique(),
     status: mysqlEnum("status", ORDER_STATUSES).default("pending").notNull(),
+    /** "retail" for the public store, "wholesale" for a logged-in wholesale account. */
+    channel: mysqlEnum("channel", ["retail", "wholesale"]).default("retail").notNull(),
+    wholesaleAccountId: int("wholesaleAccountId"),
     /** "card" when charged online, "manual" when payment is arranged by email. */
     paymentMethod: varchar("paymentMethod", { length: 32 }).notNull(),
     transactionId: varchar("transactionId", { length: 64 }),
@@ -251,6 +259,7 @@ export const orders = mysqlTable(
   },
   t => ({
     statusIdx: index("order_status_idx").on(t.status),
+    channelIdx: index("order_channel_idx").on(t.channel),
     emailIdx: index("order_email_idx").on(t.email),
     createdIdx: index("order_created_idx").on(t.createdAt),
   })
@@ -258,3 +267,40 @@ export const orders = mysqlTable(
 
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
+
+export const WHOLESALE_STATUSES = ["pending", "approved", "rejected", "suspended"] as const;
+
+/**
+ * Wholesale buyers. They apply from the site, an admin approves them, and
+ * from then on they log in to see and pay wholesale prices.
+ */
+export const wholesaleAccounts = mysqlTable(
+  "wholesale_accounts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    email: varchar("email", { length: 320 }).notNull().unique(),
+    passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+    businessName: varchar("businessName", { length: 255 }).notNull(),
+    contactName: varchar("contactName", { length: 255 }).notNull(),
+    phone: varchar("phone", { length: 64 }),
+    /** Two-letter US state. */
+    state: varchar("state", { length: 8 }),
+    /** Resale permit / tax ID, as typed. */
+    taxId: varchar("taxId", { length: 128 }),
+    website: varchar("website", { length: 500 }),
+    /** What the applicant wrote about their business. */
+    message: text("message"),
+    status: mysqlEnum("status", WHOLESALE_STATUSES).default("pending").notNull(),
+    /** Internal note, only seen in the admin. */
+    adminNote: text("adminNote"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    lastSignedIn: timestamp("lastSignedIn"),
+  },
+  t => ({
+    statusIdx: index("wholesale_status_idx").on(t.status),
+  })
+);
+
+export type WholesaleAccount = typeof wholesaleAccounts.$inferSelect;
+export type InsertWholesaleAccount = typeof wholesaleAccounts.$inferInsert;

@@ -7,6 +7,7 @@ import {
   type InsertContactMessage,
   type InsertLabReport,
   type InsertOrder,
+  type InsertWholesaleAccount,
   type InsertProduct,
   type InsertVideo,
   labReports,
@@ -14,6 +15,7 @@ import {
   products,
   siteSettings,
   videos,
+  wholesaleAccounts,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -352,11 +354,16 @@ export async function updateOrder(id: number, data: Partial<InsertOrder>) {
 
 export async function listOrders(opts: {
   status?: InsertOrder["status"];
+  channel?: "retail" | "wholesale";
   limit: number;
   offset: number;
 }) {
   const db = await requireDb();
-  const where = opts.status ? eq(orders.status, opts.status) : undefined;
+  const conds = [
+    opts.status ? eq(orders.status, opts.status) : undefined,
+    opts.channel ? eq(orders.channel, opts.channel) : undefined,
+  ].filter(Boolean);
+  const where = conds.length ? and(...(conds as any[])) : undefined;
   const rows = await db
     .select()
     .from(orders)
@@ -369,6 +376,52 @@ export async function listOrders(opts: {
     .from(orders)
     .where(where);
   return { rows, total: Number(count[0]?.c ?? 0) };
+}
+
+/* ─── Wholesale accounts ────────────────────────────────────────────────── */
+
+export async function getWholesaleByEmail(email: string) {
+  const db = await requireDb();
+  const rows = await db
+    .select()
+    .from(wholesaleAccounts)
+    .where(eq(wholesaleAccounts.email, email))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getWholesaleById(id: number) {
+  const db = await requireDb();
+  const rows = await db
+    .select()
+    .from(wholesaleAccounts)
+    .where(eq(wholesaleAccounts.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function createWholesale(data: InsertWholesaleAccount) {
+  const db = await requireDb();
+  await db.insert(wholesaleAccounts).values(data);
+  return getWholesaleByEmail(data.email);
+}
+
+export async function updateWholesale(id: number, data: Partial<InsertWholesaleAccount>) {
+  const db = await requireDb();
+  if (Object.keys(data).length > 0) {
+    await db.update(wholesaleAccounts).set(data).where(eq(wholesaleAccounts.id, id));
+  }
+  return getWholesaleById(id);
+}
+
+export async function deleteWholesale(id: number) {
+  const db = await requireDb();
+  await db.delete(wholesaleAccounts).where(eq(wholesaleAccounts.id, id));
+}
+
+export async function listWholesale() {
+  const db = await requireDb();
+  return db.select().from(wholesaleAccounts).orderBy(desc(wholesaleAccounts.id));
 }
 
 /* ─── Dashboard ───────────────────────────────────────────────────────────── */
@@ -421,7 +474,15 @@ export async function getDashboardStats() {
     .where(sql`${orders.status} in ('paid','shipped','delivered')`);
   const revenueCents = Number(revenueRows[0]?.c ?? 0);
 
+  const pendingWholesale = await count(
+    db
+      .select({ c: sql<number>`count(*)` })
+      .from(wholesaleAccounts)
+      .where(eq(wholesaleAccounts.status, "pending"))
+  );
+
   return {
+    pendingWholesale,
     openOrders,
     revenueCents,
     totalProducts,

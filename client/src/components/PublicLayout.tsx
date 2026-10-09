@@ -8,7 +8,7 @@ import { useStoreConfig } from "@/lib/catalog";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { BRAND_NAME, BRAND_SLOGAN, DEFAULT_CONTACT } from "@shared/const";
-import { ArrowUpRight, Menu, ShoppingBag, X } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, Menu, ShoppingBag, Store, X } from "lucide-react";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Link, useLocation } from "wouter";
 
@@ -67,6 +67,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
   const footerRef = useRef<HTMLElement | null>(null);
   const cart = useCart();
   const nav = useNav();
+  const wholesale = trpc.wholesale.me.useQuery(undefined, { staleTime: 5 * 60_000 }).data;
 
   // A link in the mobile menu changes the route; the menu shouldn't stay up.
   useEffect(() => setOpen(false), [location]);
@@ -106,6 +107,19 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-1">
+            <Link
+              href="/wholesale"
+              className={cn(
+                "flex h-11 items-center gap-2 rounded-full px-3 hover:bg-white/10",
+                wholesale ? "text-gold" : "text-cream"
+              )}
+              aria-label={wholesale ? `Wholesale account: ${wholesale.businessName}` : "Wholesale login"}
+            >
+              {wholesale ? <BadgeCheck className="h-5.5 w-5.5" /> : <Store className="h-5.5 w-5.5" />}
+              <span className="hidden text-[0.8rem] font-extrabold uppercase tracking-[0.16em] xl:inline">
+                Wholesale
+              </span>
+            </Link>
             <button
               type="button"
               onClick={() => cart.setOpen(true)}
@@ -135,6 +149,14 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="holo-rule !h-[3px]" aria-hidden />
+        {wholesale && (
+          <Link
+            href="/wholesale"
+            className="block bg-gold px-4 py-1.5 text-center text-xs font-extrabold uppercase tracking-[0.16em] text-night"
+          >
+            Wholesale pricing · {wholesale.businessName}
+          </Link>
+        )}
 
         {open && (
           <nav id="mobile-nav" aria-label="Main" className="bg-night lg:hidden">
@@ -148,6 +170,12 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                   activeClass="!text-gold"
                 />
               ))}
+              <Link
+                href="/wholesale"
+                className="py-4 font-display text-3xl uppercase text-gold"
+              >
+                {wholesale ? "Wholesale account" : "Wholesale login"}
+              </Link>
             </div>
           </nav>
         )}
@@ -217,6 +245,11 @@ function SiteFooter({
               <li>
                 <Link href="/lab-reports" className="text-cream hover:text-gold">
                   Reports by product
+                </Link>
+              </li>
+              <li>
+                <Link href="/wholesale" className="text-cream hover:text-gold">
+                  Wholesale
                 </Link>
               </li>
             </ul>

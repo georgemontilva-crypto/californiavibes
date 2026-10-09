@@ -266,6 +266,7 @@ function ProductRow({
           <span className="block truncate text-xs text-white/45">
             {[
               product.priceCents > 0 ? formatMoney(product.priceCents) : "No price",
+              product.wholesalePriceCents ? `Wholesale ${formatMoney(product.wholesalePriceCents)}` : null,
               !product.inStock ? "Out of stock" : null,
               product.subtitle,
               `${product.reports.length} report${product.reports.length === 1 ? "" : "s"}`,
@@ -308,6 +309,9 @@ function ProductEditor({
   const [price, setPrice] = useState(product.priceCents ? (product.priceCents / 100).toFixed(2) : "");
   const [compareAt, setCompareAt] = useState(
     product.compareAtCents ? (product.compareAtCents / 100).toFixed(2) : ""
+  );
+  const [wholesalePrice, setWholesalePrice] = useState(
+    product.wholesalePriceCents ? (product.wholesalePriceCents / 100).toFixed(2) : ""
   );
   const { upload, progress, isUploading } = useR2Upload();
 
@@ -355,13 +359,19 @@ function ProductEditor({
     }
     const priceCents = price.trim() ? parseMoney(price) : 0;
     const compareAtCents = compareAt.trim() ? parseMoney(compareAt) : null;
-    if (priceCents === null || (compareAt.trim() && compareAtCents === null)) {
+    const wholesalePriceCents = wholesalePrice.trim() ? parseMoney(wholesalePrice) : null;
+    if (
+      priceCents === null ||
+      (compareAt.trim() && compareAtCents === null) ||
+      (wholesalePrice.trim() && wholesalePriceCents === null)
+    ) {
       toast.error("Write prices like 34.99");
       return;
     }
     update.mutate({
       priceCents,
       compareAtCents,
+      wholesalePriceCents: wholesalePriceCents || null,
       facts: facts.trim() || null,
       id: product.id,
       name: name.trim(),
@@ -429,7 +439,7 @@ function ProductEditor({
               className={inputClass}
             />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Price (USD)" hint="Empty or 0 = can't be bought yet.">
               <input
                 inputMode="decimal"
@@ -444,6 +454,14 @@ function ProductEditor({
                 inputMode="decimal"
                 value={compareAt}
                 onChange={e => setCompareAt(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Wholesale price (USD)" hint="Empty = wholesale pays retail.">
+              <input
+                inputMode="decimal"
+                value={wholesalePrice}
+                onChange={e => setWholesalePrice(e.target.value)}
                 className={inputClass}
               />
             </Field>

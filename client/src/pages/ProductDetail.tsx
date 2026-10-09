@@ -98,7 +98,7 @@ export default function ProductDetail() {
 
               <Price
                 cents={p.priceCents}
-                compareAt={p.compareAtCents}
+                compareAt={p.compareAtCents ?? (p.retailPriceCents > p.priceCents ? p.retailPriceCents : null)}
                 className="mt-5 block text-3xl font-extrabold text-cream"
               />
 

@@ -1,5 +1,7 @@
 /** Admin session cookie. */
 export const ADMIN_COOKIE_NAME = "cv_admin_session";
+/** Wholesale buyer session. Separate from the admin one on purpose. */
+export const WHOLESALE_COOKIE_NAME = "cv_wholesale_session";
 export const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 
 /**
@@ -56,6 +58,8 @@ export const DEFAULT_STORE = {
   freeShippingOverCents: 7500,
   /** Two-letter states the store does not ship to. */
   blockedStates: [] as string[],
+  /** Minimum wholesale order subtotal, in cents. 0 = no minimum. */
+  wholesaleMinCents: 0,
 };
 
 export type StoreSettings = typeof DEFAULT_STORE;
@@ -65,6 +69,7 @@ export const STORE_SETTING_KEYS = [
   "shippingCents",
   "freeShippingOverCents",
   "blockedStates",
+  "wholesaleMinCents",
 ] as const;
 
 export const STRAINS = ["indica", "sativa", "hybrid"] as const;

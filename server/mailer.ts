@@ -81,6 +81,8 @@ export async function notifyContactMessage(msg: {
 
 type OrderMail = {
   number: string;
+  channel?: "retail" | "wholesale";
+  businessName?: string | null;
   status: string;
   paymentMethod: string;
   email: string;
@@ -138,8 +140,9 @@ export async function sendOrderEmails(o: OrderMail): Promise<void> {
     await send({
       to: CONTACT_TO_EMAIL,
       replyTo: o.email,
-      subject: `New order ${o.number} — ${formatMoney(o.totalCents)} (${paid ? "PAID" : "awaiting payment"})`,
+      subject: `New ${o.channel === "wholesale" ? "WHOLESALE " : ""}order ${o.number} — ${formatMoney(o.totalCents)} (${paid ? "PAID" : "awaiting payment"})`,
       text: [
+        o.channel === "wholesale" ? `WHOLESALE — ${o.businessName ?? ""}` : null,
         `Customer: ${o.firstName} ${o.lastName} <${o.email}>${o.phone ? `  ${o.phone}` : ""}`,
         `Payment: ${o.paymentMethod === "card" ? "card" : "to arrange by email"}`,
         o.customerNote ? `Note: ${o.customerNote}` : null,
@@ -171,5 +174,56 @@ export async function sendShippedEmail(o: {
     ]
       .filter(line => line !== null)
       .join("\n"),
+  });
+}
+
+export async function notifyWholesaleApplication(a: {
+  businessName: string;
+  contactName: string;
+  email: string;
+  phone: string | null;
+  state: string | null;
+  taxId: string | null;
+  website: string | null;
+  message: string | null;
+}): Promise<void> {
+  if (!isMailConfigured()) return;
+  await send({
+    to: CONTACT_TO_EMAIL,
+    replyTo: a.email,
+    subject: `${BRAND_NAME} wholesale application — ${a.businessName}`,
+    text: [
+      `Business: ${a.businessName}`,
+      `Contact: ${a.contactName} <${a.email}>`,
+      a.phone ? `Phone: ${a.phone}` : null,
+      a.state ? `State: ${a.state}` : null,
+      a.taxId ? `Resale permit / Tax ID: ${a.taxId}` : null,
+      a.website ? `Website: ${a.website}` : null,
+      a.message ? `\n${a.message}` : null,
+      "",
+      "Approve or reject it in the admin panel under Wholesale.",
+    ]
+      .filter(line => line !== null)
+      .join("\n"),
+  });
+}
+
+export async function sendWholesaleApproved(a: {
+  email: string;
+  contactName: string;
+  siteUrl: string;
+}): Promise<void> {
+  if (!canSend()) return;
+  await send({
+    to: a.email,
+    replyTo: CONTACT_TO_EMAIL || undefined,
+    subject: `Your ${BRAND_NAME} wholesale account is approved`,
+    text: [
+      `Hi ${a.contactName.split(" ")[0]},`,
+      "",
+      `Your wholesale account is approved. Log in at ${a.siteUrl}/wholesale with the email and password you applied with to see wholesale pricing and place orders.`,
+      "",
+      "Smoke less. Feel more.",
+    ].join("\n"),
   });
 }

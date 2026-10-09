@@ -43,15 +43,34 @@ export function StatusBadge({ status }: { status: string }) {
 
 export default function AdminOrders() {
   const [status, setStatus] = useState<Status | "">("");
+  const [channel, setChannel] = useState<"" | "retail" | "wholesale">("");
   const [page, setPage] = useState(1);
   const orders = trpc.store.orders.useQuery(
-    { status: status || undefined, page, pageSize: 50 },
+    { status: status || undefined, channel: channel || undefined, page, pageSize: 50 },
     { retry: false }
   );
   const pages = Math.max(1, Math.ceil((orders.data?.total ?? 0) / 50));
 
   return (
     <AdminLayout title="Orders">
+      <div className="mb-3 flex flex-wrap gap-2">
+        {(["", "retail", "wholesale"] as const).map(c => (
+          <button
+            key={c || "all"}
+            type="button"
+            onClick={() => {
+              setChannel(c);
+              setPage(1);
+            }}
+            className={cn(
+              "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+              channel === c ? "bg-[#f3c55b] text-black" : "bg-white/[0.06] text-white/60 hover:text-white"
+            )}
+          >
+            {c === "" ? "Retail + wholesale" : c === "retail" ? "Retail only" : "Wholesale only"}
+          </button>
+        ))}
+      </div>
       <div className="flex flex-wrap gap-2">
         {(["", ...STATUSES] as const).map(s => (
           <button
@@ -115,6 +134,11 @@ function OrderRow({ order: o }: { order: AdminOrder }) {
       >
         <span className="font-mono text-sm font-semibold">{o.number}</span>
         <StatusBadge status={o.status} />
+        {o.channel === "wholesale" && (
+          <span className="rounded-full bg-[#f3c55b]/20 px-2.5 py-0.5 text-xs font-semibold text-[#f3c55b]">
+            Wholesale
+          </span>
+        )}
         <span className="min-w-0 flex-1 truncate text-sm text-white/70">
           {o.firstName} {o.lastName} · {count} item{count === 1 ? "" : "s"}
         </span>

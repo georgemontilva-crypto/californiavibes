@@ -12,6 +12,7 @@ COA (el link se cambia en `/admin/store`).
 | `/products/:slug` | Un producto: foto, precio, cantidad, Add to cart, facts, reporte y otros formatos de la misma cepa |
 | `/checkout` | Datos de envío, pago (tarjeta con Authorize.net o "pago por email") y resumen |
 | `/order/:number` | Confirmación del pedido |
+| `/wholesale` | Login de mayoristas y formulario para solicitar cuenta |
 | `/lab-reports` | Reportes subidos desde el panel, por producto, más el botón a Dropbox |
 | `/about` | About Us |
 | `/contact` | Contact Us: formulario + datos de la empresa |
@@ -125,6 +126,12 @@ botón **Repair file links** de `/admin/lab-reports` las reescribe.
   le manda email al cliente (si Resend está configurado).
 - **Products**: nombre, formato, color, **precio**, precio tachado, stock,
   descripción, facts y foto. Los precios que vienen cargados son **de ejemplo**.
+- **Wholesale**: solicitudes de cuentas mayoristas. *Approve* las activa (y les
+  manda email si Resend está configurado); *Suspend* las corta en el próximo
+  clic del comprador. Un mayorista aprobado que inicia sesión ve el **precio
+  mayorista** de cada producto (campo *Wholesale price* en Products; vacío =
+  paga el precio al detal) y sus pedidos salen marcados *Wholesale* en Orders.
+  El pedido mínimo mayorista se pone en Store settings (0 = sin mínimo).
 - **Lab Reports**: elegir el producto y subir el PDF. Sale en la página del
   producto y en `/lab-reports`.
 - **Videos**: clips verticales (9:16) en MP4. El marcado con estrella sale en el

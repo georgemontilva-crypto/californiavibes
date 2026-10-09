@@ -8,6 +8,7 @@ import {
   FlaskConical,
   Inbox,
   ShoppingCart,
+  Handshake,
   Store,
   Loader2,
   LogOut,
@@ -23,6 +24,7 @@ import { Link, useLocation } from "wouter";
 const NAV = [
   { label: "Dashboard", href: "/admin", icon: BarChart3 },
   { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
+  { label: "Wholesale", href: "/admin/wholesale", icon: Handshake },
   { label: "Products", href: "/admin/products", icon: Package },
   { label: "Lab Reports", href: "/admin/lab-reports", icon: FlaskConical },
   { label: "Videos", href: "/admin/videos", icon: Clapperboard },

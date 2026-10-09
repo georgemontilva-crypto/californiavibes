@@ -5,6 +5,7 @@ import { adminAuthedProcedure, appRouterFactory, publicProc } from "../appTrpc";
 import { repairFileUrls } from "../fixFileUrls";
 import * as db from "../db";
 import { UPLOAD_KINDS, uploadTypeProblem } from "../uploadKinds";
+import { currentWholesale, priceFor } from "../wholesaleSession";
 import {
   isStorageConfigured,
   missingStorageVars,
@@ -83,7 +84,8 @@ export const catalogRouter = appRouterFactory({
    * product grid and the "more from this line" strip all read from this one
    * query and share its cache instead of each asking for its own slice.
    */
-  publicProducts: publicProc.query(async () => {
+  publicProducts: publicProc.query(async ({ ctx }) => {
+    const wholesale = !!(await currentWholesale(ctx));
     const rows = await db.listProductsWithReports({ publishedOnly: true });
     return rows.map(p => ({
       id: p.id,
@@ -94,8 +96,10 @@ export const catalogRouter = appRouterFactory({
       strain: p.strain,
       accentColor: p.accentColor,
       imageUrl: p.imageUrl,
-      priceCents: p.priceCents,
-      compareAtCents: p.compareAtCents,
+      /** What this visitor pays: the wholesale price for an approved account. */
+      priceCents: priceFor(p, wholesale),
+      retailPriceCents: p.priceCents,
+      compareAtCents: wholesale ? null : p.compareAtCents,
       inStock: p.inStock,
       reportCount: p.reports.length,
     }));
@@ -104,7 +108,8 @@ export const catalogRouter = appRouterFactory({
   /** One product with everything its page shows, reports included. */
   productBySlug: publicProc
     .input(z.object({ slug: z.string().min(1).max(160) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const wholesale = !!(await currentWholesale(ctx));
       const p = await db.getProductBySlug(input.slug);
       if (!p || !p.published) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Product not found" });
@@ -121,8 +126,9 @@ export const catalogRouter = appRouterFactory({
         description: p.description,
         facts: p.facts,
         imageUrl: p.imageUrl,
-        priceCents: p.priceCents,
-        compareAtCents: p.compareAtCents,
+        priceCents: priceFor(p, wholesale),
+        retailPriceCents: p.priceCents,
+        compareAtCents: wholesale ? null : p.compareAtCents,
         inStock: p.inStock,
         reports: reports.map(publicReport),
       };
@@ -224,6 +230,7 @@ export const catalogRouter = appRouterFactory({
         imageKey: z.string().max(512).nullable().optional(),
         priceCents: z.number().int().min(0).max(10000000).default(0),
         compareAtCents: z.number().int().min(0).max(10000000).nullable().optional(),
+        wholesalePriceCents: z.number().int().min(0).max(10000000).nullable().optional(),
         inStock: z.boolean().default(true),
         sortOrder: z.number().int().default(0),
         published: z.boolean().default(true),
@@ -259,6 +266,7 @@ export const catalogRouter = appRouterFactory({
         imageKey: input.imageKey ?? null,
         priceCents: input.priceCents,
         compareAtCents: input.compareAtCents ?? null,
+        wholesalePriceCents: input.wholesalePriceCents ?? null,
         inStock: input.inStock,
         sortOrder: input.sortOrder,
         published: input.published,
@@ -281,6 +289,7 @@ export const catalogRouter = appRouterFactory({
         imageKey: z.string().max(512).nullable().optional(),
         priceCents: z.number().int().min(0).max(10000000).optional(),
         compareAtCents: z.number().int().min(0).max(10000000).nullable().optional(),
+        wholesalePriceCents: z.number().int().min(0).max(10000000).nullable().optional(),
         inStock: z.boolean().optional(),
         sortOrder: z.number().int().optional(),
         published: z.boolean().optional(),

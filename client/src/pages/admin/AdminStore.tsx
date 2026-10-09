@@ -21,6 +21,7 @@ export default function AdminStore() {
     shipping: string;
     freeOver: string;
     blocked: string[];
+    wholesaleMin: string;
   } | null>(null);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function AdminStore() {
         shipping: (config.data.shippingCents / 100).toFixed(2),
         freeOver: (config.data.freeShippingOverCents / 100).toFixed(2),
         blocked: config.data.blockedStates,
+        wholesaleMin: (config.data.wholesaleMinCents / 100).toFixed(2),
       });
     }
   }, [config.data, form]);
@@ -77,7 +79,8 @@ export default function AdminStore() {
               e.preventDefault();
               const shippingCents = parseMoney(form.shipping);
               const freeShippingOverCents = parseMoney(form.freeOver || "0");
-              if (shippingCents === null || freeShippingOverCents === null) {
+              const wholesaleMinCents = parseMoney(form.wholesaleMin || "0");
+              if (shippingCents === null || freeShippingOverCents === null || wholesaleMinCents === null) {
                 toast.error("Use plain amounts like 5.99");
                 return;
               }
@@ -86,6 +89,7 @@ export default function AdminStore() {
                 shippingCents,
                 freeShippingOverCents,
                 blockedStates: form.blocked,
+                wholesaleMinCents,
               });
             }}
           >
@@ -131,6 +135,20 @@ export default function AdminStore() {
                   .
                 </p>
               )}
+            </Card>
+
+            <Card
+              title="Wholesale"
+              description="Applies to logged-in, approved wholesale accounts. Wholesale prices are set per product under Products."
+            >
+              <Field label="Minimum order (USD)" hint="0 = no minimum.">
+                <input
+                  inputMode="decimal"
+                  value={form.wholesaleMin}
+                  onChange={e => setForm({ ...form, wholesaleMin: e.target.value })}
+                  className={inputClass}
+                />
+              </Field>
             </Card>
 
             <Card

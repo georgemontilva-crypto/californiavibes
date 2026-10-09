@@ -72,7 +72,7 @@ export function ProductCard({
       <div className="mt-4 flex items-center justify-between gap-3">
         <Price
           cents={product.priceCents}
-          compareAt={product.compareAtCents}
+          compareAt={product.compareAtCents ?? (product.retailPriceCents > product.priceCents ? product.retailPriceCents : null)}
           className="text-lg font-extrabold text-cream"
         />
         {buyable ? (

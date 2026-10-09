@@ -16,6 +16,7 @@ import { adminAuthedProcedure, appRouterFactory, publicProc } from "../appTrpc";
 import * as db from "../db";
 import { sendOrderEmails, sendShippedEmail } from "../mailer";
 import { chargeCard, isCardPaymentConfigured, publicPaymentConfig } from "../payments";
+import { currentWholesale, priceFor } from "../wholesaleSession";
 
 /* ─── Settings ────────────────────────────────────────────────────────────── */
 
@@ -38,6 +39,7 @@ export async function storeSettings(): Promise<StoreSettings> {
       s.blockedStates !== undefined
         ? parseStateList(s.blockedStates)
         : DEFAULT_STORE.blockedStates,
+    wholesaleMinCents: toCents(s.wholesaleMinCents, DEFAULT_STORE.wholesaleMinCents),
   };
 }
 
@@ -135,6 +137,7 @@ export const storeRouter = appRouterFactory({
     }
 
     const settings = await storeSettings();
+    const wholesale = await currentWholesale(ctx);
     if (settings.blockedStates.includes(input.state)) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -176,18 +179,26 @@ export const storeRouter = appRouterFactory({
         name: p.name,
         line: p.collection,
         imageUrl: p.imageUrl,
-        priceCents: p.priceCents,
+        priceCents: priceFor(p, !!wholesale),
         qty,
       });
     }
 
     const subtotalCents = subtotalOf(lines);
+    if (wholesale && settings.wholesaleMinCents > 0 && subtotalCents < settings.wholesaleMinCents) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Wholesale orders need a subtotal of at least $${(settings.wholesaleMinCents / 100).toFixed(2)}.`,
+      });
+    }
     const shippingCents = shippingFor(subtotalCents, settings);
     const totalCents = subtotalCents + shippingCents;
     const number = await newOrderNumber();
 
     const base = {
       number,
+      channel: wholesale ? ("wholesale" as const) : ("retail" as const),
+      wholesaleAccountId: wholesale?.id ?? null,
       paymentMethod: cardMode ? "card" : "manual",
       email: input.email.toLowerCase(),
       phone: input.phone || null,
@@ -250,7 +261,7 @@ export const storeRouter = appRouterFactory({
       });
     }
 
-    void sendOrderEmails({ ...base, status, lines });
+    void sendOrderEmails({ ...base, status, lines, businessName: wholesale?.businessName ?? null });
 
     return {
       number,
@@ -270,6 +281,7 @@ export const storeRouter = appRouterFactory({
     .input(
       z.object({
         status: z.enum(ORDER_STATUSES).optional(),
+        channel: z.enum(["retail", "wholesale"]).optional(),
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(1).max(100).default(50),
       })
@@ -277,6 +289,7 @@ export const storeRouter = appRouterFactory({
     .query(async ({ input }) => {
       const result = await db.listOrders({
         status: input.status,
+        channel: input.channel,
         limit: input.pageSize,
         offset: (input.page - 1) * input.pageSize,
       });
@@ -321,6 +334,7 @@ export const storeRouter = appRouterFactory({
         shippingCents: z.number().int().min(0).max(100000),
         freeShippingOverCents: z.number().int().min(0).max(10000000),
         blockedStates: z.array(z.string()).max(60),
+        wholesaleMinCents: z.number().int().min(0).max(100000000).default(0),
       })
     )
     .mutation(async ({ input }) => {
@@ -328,6 +342,7 @@ export const storeRouter = appRouterFactory({
       await db.setSetting("shippingCents", String(input.shippingCents));
       await db.setSetting("freeShippingOverCents", String(input.freeShippingOverCents));
       await db.setSetting("blockedStates", parseStateList(input.blockedStates.join(",")).join(","));
+      await db.setSetting("wholesaleMinCents", String(input.wholesaleMinCents));
       return { success: true, settings: await storeSettings() };
     }),
 });

@@ -11,6 +11,7 @@ import LabReports from "@/pages/LabReports";
 import NotFound from "@/pages/NotFound";
 import OrderSuccess from "@/pages/OrderSuccess";
 import ProductDetail from "@/pages/ProductDetail";
+import Wholesale from "@/pages/Wholesale";
 import Products from "@/pages/Products";
 
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -23,6 +24,7 @@ import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminStore from "@/pages/admin/AdminStore";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminVideos from "@/pages/admin/AdminVideos";
+import AdminWholesale from "@/pages/admin/AdminWholesale";
 
 /**
  * Browsers default scrollRestoration to "auto" and restore the previous offset
@@ -72,12 +74,14 @@ export default function App() {
         <Route path="/about" component={About} />
         <Route path="/contact" component={Contact} />
         <Route path="/checkout" component={Checkout} />
+        <Route path="/wholesale" component={Wholesale} />
         <Route path="/order/:number" component={OrderSuccess} />
 
         {/* Admin */}
         <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/admin/orders" component={AdminOrders} />
+        <Route path="/admin/wholesale" component={AdminWholesale} />
         <Route path="/admin/store" component={AdminStore} />
         <Route path="/admin/products" component={AdminProducts} />
         <Route path="/admin/lab-reports" component={AdminLabReports} />

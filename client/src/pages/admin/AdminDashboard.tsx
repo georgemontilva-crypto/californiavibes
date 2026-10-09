@@ -4,6 +4,7 @@ import { StatusBadge } from "@/pages/admin/AdminOrders";
 import { formatMoney } from "@shared/store";
 import {
   CircleDollarSign,
+  Handshake,
   ShoppingCart,
   Clapperboard,
   FileText,
@@ -22,6 +23,12 @@ export default function AdminDashboard() {
 
   const tiles = [
     { label: "Orders to handle", value: c?.openOrders, icon: ShoppingCart, href: "/admin/orders" },
+    {
+      label: "Wholesale applications to review",
+      value: c?.pendingWholesale,
+      icon: Handshake,
+      href: "/admin/wholesale",
+    },
     {
       label: "Sales (paid, shipped, delivered)",
       value: c ? formatMoney(c.revenueCents) : undefined,
