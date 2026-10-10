@@ -10,7 +10,7 @@
  *   SEED_CATALOG=true                    (en Railway; corre una vez al arrancar)
  *   DATABASE_URL="…" pnpm seed           (desde una máquina que alcance la BD)
  *
- * Los PRECIOS son de ejemplo: se cambian en /admin/products.
+ * Precios retail y mayorista del cliente; se cambian en /admin/products.
  * No carga reportes de laboratorio: esos se suben desde /admin/lab-reports.
  */
 import "dotenv/config";
@@ -34,6 +34,7 @@ type SeedLine = {
   prefix: string;
   subtitle: string;
   priceCents: number;
+  wholesalePriceCents: number;
   describe: (name: string) => string;
   facts: string[];
 };
@@ -44,6 +45,7 @@ const CATALOG: SeedLine[] = [
     prefix: "cbg-flower",
     subtitle: "3.5G jar · Premium indoor CBG flower",
     priceCents: 3499,
+    wholesalePriceCents: 1750,
     describe: name =>
       `${name} premium indoor CBG flower, packed in our holographic 3.5 gram jar. Grown indoors, lab tested, pesticide free and THC free. Smoke less. Feel more.`,
     facts: [
@@ -59,6 +61,7 @@ const CATALOG: SeedLine[] = [
     prefix: "pre-rolls",
     subtitle: "2-pack · 2 × 1G · Blue Lotus infused",
     priceCents: 1999,
+    wholesalePriceCents: 999,
     describe: name =>
       `Two ${name} pre-rolls of our premium botanical blend, each one gram and infused with blue lotus. THC free and lab tested. Smoke less. Feel more.`,
     facts: [
@@ -73,7 +76,8 @@ const CATALOG: SeedLine[] = [
     collection: "Disposables",
     prefix: "disposable",
     subtitle: "1G disposable · Blue Lotus infused",
-    priceCents: 2999,
+    priceCents: 3999,
+    wholesalePriceCents: 1750,
     describe: name =>
       `The ${name} disposable: a black and gold device holding one gram of premium botanical blend infused with blue lotus. THC free and lab tested. Smoke less. Feel more.`,
     facts: [
@@ -118,6 +122,7 @@ export async function seedCatalog(): Promise<void> {
         imageUrl: `/products/${slug}.webp`,
         imageKey: null,
         priceCents: line.priceCents,
+        wholesalePriceCents: line.wholesalePriceCents,
         compareAtCents: null,
         inStock: true,
         sortOrder: (lineIndex + 1) * 100 + i,

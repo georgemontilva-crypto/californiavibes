@@ -15,6 +15,13 @@
       "when": 1791560386738,
       "tag": "0001_wholesale",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1791605730300,
+      "tag": "0002_set_prices",
+      "breakpoints": true
     }
   ]
 }
