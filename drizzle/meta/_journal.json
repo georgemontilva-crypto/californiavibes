@@ -22,6 +22,13 @@
       "when": 1791605730300,
       "tag": "0002_set_prices",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1791914186458,
+      "tag": "0003_contact_phone",
+      "breakpoints": true
     }
   ]
 }
