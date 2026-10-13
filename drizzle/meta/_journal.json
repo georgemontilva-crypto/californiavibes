@@ -29,6 +29,13 @@
       "when": 1791914186458,
       "tag": "0003_contact_phone",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1791915372983,
+      "tag": "0004_contact_email",
+      "breakpoints": true
     }
   ]
 }

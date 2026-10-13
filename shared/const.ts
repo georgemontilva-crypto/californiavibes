@@ -25,7 +25,7 @@ export const DEFAULT_LAB_REPORTS_URL =
  */
 export const DEFAULT_CONTACT = {
   company: "California Vibes",
-  email: "",
+  email: "sales@mycaliforniavibes.com",
   phone: "818.740.8234",
   address: "",
   instagram: "",
