@@ -10,6 +10,7 @@ import Home from "@/pages/Home";
 import LabReports from "@/pages/LabReports";
 import NotFound from "@/pages/NotFound";
 import OrderSuccess from "@/pages/OrderSuccess";
+import Policy from "@/pages/Policy";
 import ProductDetail from "@/pages/ProductDetail";
 import Wholesale from "@/pages/Wholesale";
 import WholesaleReset from "@/pages/WholesaleReset";
@@ -75,6 +76,10 @@ export default function App() {
         <Route path="/about" component={About} />
         <Route path="/contact" component={Contact} />
         <Route path="/checkout" component={Checkout} />
+        <Route path="/terms" component={Policy} />
+        <Route path="/privacy" component={Policy} />
+        <Route path="/shipping" component={Policy} />
+        <Route path="/returns" component={Policy} />
         <Route path="/wholesale/reset" component={WholesaleReset} />
         <Route path="/wholesale" component={Wholesale} />
         <Route path="/order/:number" component={OrderSuccess} />

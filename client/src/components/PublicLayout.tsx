@@ -8,6 +8,7 @@ import { useStoreConfig } from "@/lib/catalog";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { BRAND_NAME, BRAND_SLOGAN, DEFAULT_CONTACT } from "@shared/const";
+import { POLICIES } from "@shared/policies";
 import { ArrowUpRight, BadgeCheck, Menu, ShoppingBag, Store, X } from "lucide-react";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Link, useLocation } from "wouter";
@@ -308,6 +309,17 @@ function SiteFooter({
             products are not intended to diagnose, treat, cure or prevent any
             disease. Check your local laws before ordering.
           </p>
+          <nav aria-label="Policies" className="mt-5">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2">
+              {POLICIES.map(p => (
+                <li key={p.slug}>
+                  <Link href={`/${p.slug}`} className="text-cream underline-offset-4 hover:text-gold hover:underline">
+                    {p.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
           <p className="mt-5">
             © {new Date().getFullYear()} {details.company}. For adults 21 and older.
           </p>

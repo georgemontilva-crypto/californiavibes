@@ -334,8 +334,20 @@ export default function Checkout() {
                 required
               />
               <span className="text-cream">
-                I confirm I am <strong>21 or older</strong> and that these products are
-                legal where I live.
+                I confirm I am <strong>21 or older</strong>, that these products are
+                legal where I live, and I agree to the{" "}
+                <Link href="/terms" target="_blank" rel="noopener" className="text-gold underline underline-offset-4">
+                  Terms of Service
+                </Link>
+                ,{" "}
+                <Link href="/shipping" target="_blank" rel="noopener" className="text-gold underline underline-offset-4">
+                  Shipping
+                </Link>{" "}
+                and{" "}
+                <Link href="/returns" target="_blank" rel="noopener" className="text-gold underline underline-offset-4">
+                  Returns
+                </Link>{" "}
+                policies.
               </span>
             </label>
           </div>
