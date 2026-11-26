@@ -1,6 +1,6 @@
 # California Vibes — Premium Botanicals
 
-Tienda de la marca (CBG Flower, Pre-Rolls y Disposables, 6 cepas cada una) con
+Tienda de la marca (CBG Flower, Pre-Rolls, Pre-Roll Tubes y Disposables, 6 cepas cada una) con
 carrito, checkout, pedidos, reportes de laboratorio y un panel para manejarlo
 todo. El botón **LAB REPORTS** del menú abre la carpeta de Dropbox con todos los
 COA (el link se cambia en `/admin/store`).

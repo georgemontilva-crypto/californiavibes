@@ -68,7 +68,10 @@ function Hero({
 }) {
   // One of each format, in the same strain so the trio reads as a set.
   const trio = useMemo(() => {
-    const groups = groupByLine(products);
+    // The hero keeps the original trio; tubes are in the strain picker and shop.
+    const groups = groupByLine(products).filter(g =>
+      ["CBG Flower", "Pre-Rolls", "Disposables"].includes(g.name)
+    );
     const strain = "og kush";
     return groups
       .map(g => g.items.find(p => p.name.toLowerCase() === strain) ?? g.items[0])
@@ -216,8 +219,8 @@ function ClaimsTicker() {
 }
 
 /* ─── Strain picker ─────────────────────────────────────────────────────────
-   Six strains, three formats each. Picking a strain repaints the section in
-   that pack's colour and lays its three formats side by side. */
+   Six strains, four formats each. Picking a strain repaints the section in
+   that pack's colour and lays its formats side by side. */
 
 function StrainPicker({
   products,
@@ -248,7 +251,7 @@ function StrainPicker({
       />
       <div className="container relative">
         <div className="text-center">
-          <p className="eyebrow">Six strains · Three formats</p>
+          <p className="eyebrow">Six strains · Four formats</p>
           <h2 className="mt-3 text-5xl text-cream md:text-7xl">
             Pick your <span className="script text-logo normal-case">vibe</span>
           </h2>
@@ -307,7 +310,7 @@ function StrainPicker({
 }
 
 /* ─── Strain carousel ─────────────────────────────────────────────────────
-   On phones the three formats of a strain slide sideways, one card at a time
+   On phones the formats of a strain slide sideways, one card at a time
    with the next one peeking in; from tablet up they sit side by side. */
 
 function StrainCarousel({
@@ -354,7 +357,7 @@ function StrainCarousel({
       <ul
         ref={ref}
         onScroll={onScroll}
-        className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-3"
+        className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-4"
         aria-label="Formats"
       >
         {items.map(p => (

@@ -45,8 +45,8 @@ export default function Products() {
   return (
     <PublicLayout>
       <PageHeader title="Products" eyebrow="Shop California Vibes">
-        Six strains in three formats: CBG flower, blue lotus pre-rolls and
-        disposables. THC free and lab tested.
+        Six strains in four formats: CBG flower, blue lotus pre-rolls,
+        single pre-roll tubes and disposables. THC free and lab tested.
       </PageHeader>
 
       <div className="container py-10">

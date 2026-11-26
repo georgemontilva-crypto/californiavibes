@@ -1,6 +1,6 @@
 /**
- * Carga inicial del catálogo de California Vibes: las 6 cepas en las 3 líneas
- * (CBG Flower 3.5G, Pre-Rolls 2-pack y Disposables 1G), con la foto que viene
+ * Carga inicial del catálogo de California Vibes: las 6 cepas en las 4 líneas
+ * (CBG Flower 3.5G, Pre-Rolls 2-pack, Pre-Roll Tubes 1.5G y Disposables 1G), con la foto que viene
  * en el repo (client/public/products) y los datos impresos en los empaques.
  *
  * Es idempotente y aditivo. Un producto cuyo slug ya existe se deja tal cual,
@@ -27,7 +27,19 @@ const STRAINS: { name: string; slug: string; accent: string }[] = [
   { name: "Skunk OG", slug: "skunk-og", accent: "#3fcf5e" },
 ];
 
+/** Tipo de cepa impreso en el tubo (los demás empaques no lo traen). */
+const STRAIN_TYPE: Record<string, "indica" | "sativa" | "hybrid"> = {
+  "socal-gas": "sativa",
+  "og-kush": "hybrid",
+  "king-louis": "indica",
+  gelato: "hybrid",
+  "toad-venom": "indica",
+  "skunk-og": "sativa",
+};
+
 type SeedLine = {
+  /** Marca el tipo de cepa (indica/sativa/hybrid) en esta línea. */
+  withStrainType?: boolean;
   /** Debe coincidir con un nombre de shared/lines.ts. */
   collection: string;
   /** Prefijo del slug y del archivo de la foto. */
@@ -67,6 +79,23 @@ const CATALOG: SeedLine[] = [
     facts: [
       "Count: 2 pre-rolls",
       "Net weight: 2 × 1 G (2 G total)",
+      "Blend: Premium botanical blend, blue lotus infused",
+      "THC: Free",
+      "Lab tested: Yes",
+    ],
+  },
+  {
+    collection: "Pre-Roll Tubes",
+    prefix: "pre-roll-tube",
+    subtitle: "1 pack · 1.5G · Blue Lotus infused",
+    priceCents: 1499,
+    wholesalePriceCents: 0,
+    withStrainType: true,
+    describe: name =>
+      `One ${name} pre-roll of our premium botanical blend, 1.5 grams and infused with blue lotus, in its own tube. THC free and lab tested. Smoke less. Feel more.`,
+    facts: [
+      "Count: 1 pre-roll",
+      "Net weight: 1 × 1.5 G (1.5 G total)",
       "Blend: Premium botanical blend, blue lotus infused",
       "THC: Free",
       "Lab tested: Yes",
@@ -114,7 +143,7 @@ export async function seedCatalog(): Promise<void> {
         name: s.name,
         collection: line.collection,
         subtitle: line.subtitle,
-        strain: null,
+        strain: line.withStrainType ? STRAIN_TYPE[s.slug] ?? null : null,
         accentColor: s.accent,
         description: line.describe(s.name),
         facts: line.facts.join("\n"),
@@ -122,7 +151,7 @@ export async function seedCatalog(): Promise<void> {
         imageUrl: `/products/${slug}.webp`,
         imageKey: null,
         priceCents: line.priceCents,
-        wholesalePriceCents: line.wholesalePriceCents,
+        wholesalePriceCents: line.wholesalePriceCents || null,
         compareAtCents: null,
         inStock: true,
         sortOrder: (lineIndex + 1) * 100 + i,

@@ -30,6 +30,13 @@ export const LINES: LineInfo[] = [
       "Two one-gram pre-rolls of our premium botanical blend, infused with blue lotus.",
   },
   {
+    name: "Pre-Roll Tubes",
+    slug: "pre-roll-tubes",
+    format: "1 pack · 1.5G · Blue Lotus infused",
+    blurb:
+      "A single 1.5 gram pre-roll of our premium botanical blend, infused with blue lotus, in its own tube.",
+  },
+  {
     name: "Disposables",
     slug: "disposables",
     format: "1G disposable · Blue Lotus infused",

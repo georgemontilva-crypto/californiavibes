@@ -20,6 +20,11 @@ const FORMATS = [
       "A 2-pack of one-gram pre-rolls made from our premium botanical blend and infused with blue lotus.",
   },
   {
+    term: "Pre-Roll Tubes",
+    detail:
+      "One 1.5 gram blue lotus pre-roll in its own tube, for when one is all you need.",
+  },
+  {
     term: "Disposables",
     detail:
       "One gram of the same blue lotus botanical blend in a black and gold disposable. Nothing to fill, nothing to charge first.",
@@ -31,6 +36,7 @@ export default function About() {
   const products = trpc.catalog.publicProducts.useQuery();
   const details = trpc.site.contactDetails.useQuery().data ?? DEFAULT_CONTACT;
   const faces = groupByLine(products.data ?? [])
+    .filter(g => ["CBG Flower", "Pre-Rolls", "Disposables"].includes(g.name))
     .map((g, i) => g.items[[1, 4, 3][i] ?? 0] ?? g.items[0])
     .filter(Boolean);
 
@@ -87,9 +93,9 @@ export default function About() {
         <div className="container grid gap-10 py-14 md:py-20 lg:grid-cols-[320px_1fr]">
           <div>
             <p className="eyebrow">The lineup</p>
-            <h2 className="mt-3 text-5xl text-cream md:text-6xl">Three ways to unwind</h2>
+            <h2 className="mt-3 text-5xl text-cream md:text-6xl">Four ways to unwind</h2>
           </div>
-          <dl className="grid gap-x-10 gap-y-8 md:grid-cols-3">
+          <dl className="grid gap-x-10 gap-y-8 md:grid-cols-2 xl:grid-cols-4">
             {FORMATS.map(item => (
               <div key={item.term} className="border-t-[3px] border-gold pt-4">
                 <dt className="font-display text-3xl uppercase text-cream">{item.term}</dt>
