@@ -24,6 +24,19 @@ async function startServer() {
   // visitor as the same one.
   app.set("trust proxy", 1);
 
+  // mycaliforniavibes.com → https://www.mycaliforniavibes.com, same path and
+  // query, as a permanent (301) redirect so browsers and Google remember it.
+  // Only the bare domain is matched: the railway.app address and local
+  // development keep working as they are.
+  app.use((req, res, next) => {
+    const host = (req.get("host") ?? "").toLowerCase().replace(/:\d+$/, "");
+    if (host === "mycaliforniavibes.com") {
+      res.redirect(301, `https://www.mycaliforniavibes.com${req.originalUrl}`);
+      return;
+    }
+    next();
+  });
+
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
   });
